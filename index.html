@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>東京陰陽師｜式神アーサー 運気解釈ポータル</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700;900&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- ══ EmailJS SDK ══ -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<style>
+/* ════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════ */
+:root{
+  --black:#080808;--deep:#0c0c18;
+  --gold:#c8a84b;--gold-lt:#e6cc88;--gold-dim:#6e5828;
+  --red-br:#c02020;--white:#ede6d4;--white-dim:#9a8e72;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:'Noto Serif JP',serif;overflow-x:hidden}
+
+/* noise overlay */
+body::after{content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:.35}
+
+/* ════ HERO ════ */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 60px}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 38%,#1c0a00 0%,var(--black) 68%)}
+.stars{position:absolute;inset:0;background-image:
+  radial-gradient(1px 1px at 8% 18%,rgba(200,168,75,.7) 0%,transparent 100%),
+  radial-gradient(1px 1px at 22% 68%,rgba(200,168,75,.5) 0%,transparent 100%),
+  radial-gradient(1px 1px at 58% 12%,rgba(200,168,75,.6) 0%,transparent 100%),
+  radial-gradient(1px 1px at 78% 52%,rgba(200,168,75,.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 42% 82%,rgba(200,168,75,.5) 0%,transparent 100%),
+  radial-gradient(1px 1px at 88% 28%,rgba(200,168,75,.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 14% 48%,rgba(255,255,255,.25) 0%,transparent 100%),
+  radial-gradient(1px 1px at 68% 78%,rgba(255,255,255,.2) 0%,transparent 100%)}
+.ring{position:absolute;border-radius:50%;border:1px solid var(--gold-dim);animation:spin linear infinite;pointer-events:none}
+.ring-1{width:660px;height:660px;top:50%;left:50%;transform:translate(-50%,-50%);animation-duration:100s;opacity:.18}
+.ring-2{width:480px;height:480px;top:50%;left:50%;transform:translate(-50%,-50%);border-style:dashed;animation-duration:65s;animation-direction:reverse;opacity:.12}
+.ring-3{width:320px;height:320px;top:50%;left:50%;transform:translate(-50%,-50%);animation-duration:42s;opacity:.17}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.kanji-bg{position:absolute;font-size:clamp(180px,28vw,380px);font-family:'Noto Serif JP',serif;color:transparent;-webkit-text-stroke:1px rgba(200,168,75,.05);user-select:none;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none}
+.hero-content{position:relative;z-index:2;text-align:center;animation:fadeUp 1.4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.eyebrow{font-family:'Cinzel Decorative',serif;font-size:clamp(9px,1.1vw,12px);letter-spacing:.45em;color:var(--gold);margin-bottom:26px;opacity:.75}
+.hero-title{font-weight:900;font-size:clamp(38px,7.5vw,88px);line-height:1.05;letter-spacing:-.02em;color:var(--white);margin-bottom:8px}
+.hero-title span{color:var(--gold);display:block}
+.hero-sub{font-family:'Cinzel Decorative',serif;font-size:clamp(11px,1.4vw,15px);letter-spacing:.25em;color:var(--gold-dim);margin-bottom:38px}
+.divr{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:36px}
+.divr::before,.divr::after{content:'';width:55px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim))}
+.divr::after{background:linear-gradient(90deg,var(--gold-dim),transparent)}
+.hero-desc{max-width:520px;margin:0 auto 50px;font-size:clamp(13px,1.4vw,15px);line-height:2.2;color:var(--white-dim);font-weight:300}
+.scroll-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--gold-dim);font-size:9px;letter-spacing:.3em;animation:pulse 2s ease infinite}
+.scroll-line{width:1px;height:38px;background:linear-gradient(to bottom,var(--gold-dim),transparent);animation:scrollLine 2s ease infinite}
+@keyframes scrollLine{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ════ STEP NAVIGATOR ════ */
+.step-nav{display:flex;justify-content:center;align-items:center;gap:0;padding:44px 20px 0;flex-wrap:wrap;gap:4px}
+.step-pill{display:flex;align-items:center;gap:8px;padding:11px 20px;border:1px solid rgba(200,168,75,.14);font-size:11px;letter-spacing:.1em;color:var(--white-dim);transition:all .4s;white-space:nowrap;cursor:default}
+.step-pill.active{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.06)}
+.step-pill.done{border-color:var(--gold-dim);color:var(--gold-dim);background:rgba(200,168,75,.03)}
+.step-num{font-family:'Cinzel Decorative',serif;font-size:9px}
+.step-arrow{color:var(--gold-dim);font-size:14px;padding:0 6px}
+
+/* ════ SECTION BASE ════ */
+.section{padding:68px 20px 96px;position:relative;display:none}
+.section.show{display:block}
+.section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)}
+.sec-wrap{max-width:780px;margin:0 auto}
+.sec-label{font-family:'Cinzel Decorative',serif;font-size:10px;letter-spacing:.5em;color:var(--gold);text-transform:uppercase;margin-bottom:18px;opacity:.7}
+.sec-title{font-size:clamp(20px,3vw,28px);font-weight:300;color:var(--white);line-height:1.7;margin-bottom:10px}
+.sec-meta{font-size:12px;color:var(--white-dim);line-height:2;margin-bottom:44px}
+
+/* ════ CARDS ════ */
+.card{border:1px solid rgba(200,168,75,.14);background:rgba(200,168,75,.025);padding:32px 36px;margin-bottom:16px;position:relative;transition:border-color .3s}
+.card:hover{border-color:rgba(200,168,75,.3)}
+.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:linear-gradient(to bottom,var(--gold),transparent);transition:height .4s}
+.card:hover::before{height:100%}
+.q-no{font-family:'Cinzel Decorative',serif;font-size:9px;letter-spacing:.4em;color:var(--gold);margin-bottom:8px;opacity:.65}
+.q-ttl{font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.q-en{font-family:'Cinzel Decorative',serif;font-size:10px;color:var(--gold-dim);letter-spacing:.1em}
+.q-desc{font-size:12px;color:var(--white-dim);line-height:1.9;margin-bottom:16px;font-weight:300}
+
+/* ════ FORM INPUTS ════ */
+.inp{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(200,168,75,.2);color:var(--white);font-family:'Noto Serif JP',serif;font-size:15px;padding:13px 16px;outline:none;transition:border-color .3s,box-shadow .3s;appearance:none;-webkit-appearance:none;border-radius:0}
+.inp:focus{border-color:var(--gold);box-shadow:0 0 18px rgba(200,168,75,.1)}
+.inp::placeholder{color:rgba(154,142,114,.4)}
+.char-ct{text-align:right;font-size:10px;color:var(--gold-dim);margin-top:5px;opacity:.65}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:560px){.field-row{grid-template-columns:1fr}}
+
+/* number picker */
+.num-wrap{display:flex;align-items:center;gap:14px;max-width:200px}
+.num-btn{width:38px;height:38px;background:transparent;border:1px solid rgba(200,168,75,.28);color:var(--gold);font-size:17px;cursor:pointer;transition:all .2s;flex-shrink:0;border-radius:0}
+.num-btn:hover{background:rgba(200,168,75,.1);border-color:var(--gold)}
+.num-disp{font-family:'Cinzel Decorative',serif;font-size:26px;color:var(--gold);width:64px;text-align:center;flex-shrink:0}
+
+/* radio */
+.radio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.r-opt{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;border:1px solid rgba(200,168,75,.14);cursor:pointer;transition:all .2s;user-select:none}
+.r-opt:hover,.r-opt.sel{border-color:var(--gold);background:rgba(200,168,75,.07)}
+.r-opt input{display:none}
+.r-mark{width:15px;height:15px;border:1px solid var(--gold-dim);border-radius:50%;flex-shrink:0;margin-top:2px;position:relative;transition:all .2s}
+.r-opt.sel .r-mark::after{content:'';position:absolute;inset:3px;background:var(--gold);border-radius:50%}
+.r-lbl{font-size:11px;line-height:1.6;color:var(--white-dim)}
+.r-alpha{font-size:13px;font-weight:700;color:var(--gold);margin-right:3px}
+
+/* ════ MATRIX (YxZ) ════ */
+.matrix-wrap{overflow-x:auto;padding-bottom:8px;margin-top:4px}
+.matrix{border-collapse:collapse;min-width:520px;width:100%}
+.matrix th,.matrix td{border:1px solid rgba(200,168,75,.16);padding:0;text-align:center;vertical-align:middle}
+.matrix th{font-family:'Cinzel Decorative',serif;font-size:8.5px;letter-spacing:.12em;color:var(--gold);padding:11px 8px;background:rgba(200,168,75,.04);font-weight:400}
+.matrix .tone-th{font-size:8.5px;color:var(--white-dim);background:rgba(200,168,75,.03);padding:10px 14px;text-align:left;letter-spacing:.08em;white-space:nowrap;width:130px}
+.matrix .color-th{min-width:90px}
+.matrix td.cell{width:90px;height:52px;cursor:pointer;transition:background .2s;position:relative}
+.matrix td.cell:hover{background:rgba(200,168,75,.08)}
+.matrix td.cell.checked{background:rgba(200,168,75,.15)}
+.matrix td.cell .chk{font-size:18px;color:var(--gold);opacity:0;transition:opacity .2s;user-select:none;line-height:52px}
+.matrix td.cell.checked .chk{opacity:1}
+.color-sub{font-size:8px;color:var(--white-dim);display:block;margin-top:2px;letter-spacing:.04em}
+
+/* ════ BUTTONS ════ */
+.btn-gold{display:inline-block;padding:15px 44px;border:1px solid var(--gold);background:var(--gold);color:var(--black);font-family:'Noto Serif JP',serif;font-size:14px;letter-spacing:.15em;cursor:pointer;transition:all .3s;text-decoration:none;position:relative;overflow:hidden;border-radius:0}
+.btn-gold::before{content:'';position:absolute;inset:0;background:var(--gold-lt);transform:translateX(-100%);transition:transform .3s}
+.btn-gold:hover::before{transform:translateX(0)}
+.btn-gold span{position:relative;z-index:1}
+
+.btn-outline{display:inline-block;padding:16px 52px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Noto Serif JP',serif;font-size:14px;letter-spacing:.22em;cursor:pointer;transition:all .4s;position:relative;overflow:hidden;border-radius:0}
+.btn-outline::before{content:'';position:absolute;inset:0;background:var(--gold);transform:translateY(100%);transition:transform .4s}
+.btn-outline:hover{color:var(--black)}
+.btn-outline:hover::before{transform:translateY(0)}
+.btn-outline span{position:relative;z-index:1}
+
+.sub-area{margin-top:40px;text-align:center}
+.sub-note{margin-top:12px;font-size:11px;color:var(--white-dim);opacity:.5;letter-spacing:.08em;line-height:1.8}
+
+/* ════ CONFIRM BOX ════ */
+.confirm-box{border:1px solid rgba(200,168,75,.25);background:rgba(200,168,75,.03);padding:32px 36px;margin:32px 0}
+.confirm-box h3{font-size:13px;letter-spacing:.2em;color:var(--gold);margin-bottom:20px;font-family:'Cinzel Decorative',serif}
+.confirm-row{display:flex;gap:16px;padding:9px 0;border-bottom:1px solid rgba(200,168,75,.08);font-size:13px;line-height:1.7}
+.confirm-row:last-child{border-bottom:none}
+.confirm-label{color:var(--gold-dim);width:120px;flex-shrink:0;font-size:12px;letter-spacing:.05em}
+.confirm-val{color:var(--white)}
+
+/* ════ SUCCESS / COMPLETE ════ */
+.complete-box{border:1px solid rgba(200,168,75,.3);padding:52px 40px;text-align:center;position:relative}
+.complete-box::before,.complete-box::after{content:'◈';position:absolute;color:var(--gold);font-size:13px;background:var(--black);padding:0 10px}
+.complete-box::before{top:-8px;left:50%;transform:translateX(-50%)}
+.complete-box::after{bottom:-8px;left:50%;transform:translateX(-50%)}
+.complete-icon{font-size:48px;margin-bottom:20px}
+.complete-title{font-size:22px;font-weight:300;color:var(--gold);margin-bottom:16px;letter-spacing:.1em}
+.complete-body{font-size:13px;color:var(--white-dim);line-height:2.4;margin-bottom:32px}
+.complete-body strong{color:var(--white)}
+
+/* ════ LOADING ════ */
+.loading{display:flex;justify-content:center;align-items:center;gap:14px;padding:48px 0;color:var(--gold-dim);font-size:12px;letter-spacing:.2em}
+.dots span{display:inline-block;width:5px;height:5px;background:var(--gold);border-radius:50%;animation:dot 1.4s ease infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* ════ NOTICE BOX ════ */
+.notice{border-left:2px solid var(--gold);padding:16px 20px;background:rgba(200,168,75,.04);margin:24px 0;font-size:12px;color:var(--white-dim);line-height:2}
+.notice strong{color:var(--gold)}
+
+/* ════ EMAILJS SETUP PANEL ════ */
+.setup-panel{background:rgba(200,168,75,.04);border:1px solid rgba(200,168,75,.18);padding:24px 28px;margin-bottom:32px;font-size:12px;color:var(--white-dim);line-height:2}
+.setup-panel summary{color:var(--gold);cursor:pointer;font-size:13px;letter-spacing:.1em;margin-bottom:8px;list-style:none}
+.setup-panel summary::before{content:'▸ '}
+details[open] summary::before{content:'▾ '}
+.setup-panel code{background:rgba(0,0,0,.4);color:var(--gold-lt);padding:2px 6px;font-size:11px;border:1px solid rgba(200,168,75,.15)}
+
+/* ════ FOOTER ════ */
+footer{border-top:1px solid rgba(200,168,75,.1);padding:36px 20px;text-align:center}
+.ft-brand{font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold-dim);letter-spacing:.3em;margin-bottom:10px}
+.ft-note{font-size:10px;color:var(--white-dim);opacity:.38;line-height:2}
+
+@media(max-width:640px){
+  .card{padding:24px 18px}
+  .step-arrow{display:none}
+  .confirm-row{flex-direction:column;gap:4px}
+  .confirm-label{width:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     HERO
+══════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="stars"></div>
+  <div class="ring ring-1"></div>
+  <div class="ring ring-2"></div>
+  <div class="ring ring-3"></div>
+  <div class="kanji-bg">陰陽</div>
+  <div class="hero-content">
+    <p class="eyebrow">Tokyo Onmyoji · 式神アーサー · Powered by AI</p>
+    <h1 class="hero-title">東京陰陽師<span>運気解釈</span></h1>
+    <p class="hero-sub">Oracle of Probability &amp; Cosmos</p>
+    <div class="divr"><span style="color:var(--gold)">☽</span></div>
+    <p class="hero-desc">「占う」のではなく、「解釈する」。<br>確率的統計論・万象データ・AIの三位一体が、<br>あなただけの神託と護符を生み出す。</p>
+    <a href="#step0" class="btn-gold" onclick="showStep0()"><span>運気解釈を申し込む</span></a>
+  </div>
+  <div class="scroll-hint"><div class="scroll-line"></div><span>scroll</span></div>
+</section>
+
+<!-- ══ STEP NAVIGATOR ══ -->
+<div class="step-nav" id="step-nav">
+  <div class="step-pill" id="snav0"><span class="step-num">Step 00</span> ご登録</div>
+  <div class="step-arrow">›</div>
+  <div class="step-pill" id="snav1"><span class="step-num">Step 01</span> 五問＋護符スタイル</div>
+  <div class="step-arrow">›</div>
+  <div class="step-pill" id="snav2"><span class="step-num">Step 02</span> 確認＆送信</div>
+  <div class="step-arrow">›</div>
+  <div class="step-pill" id="snav3"><span class="step-num">Step 03</span> 決済へ</div>
+</div>
+
+<!-- ══════════════════════════════
+     STEP 0 : 登録
+══════════════════════════════ -->
+<section class="section show" id="step0-section">
+  <div class="sec-wrap">
+    <p class="sec-label">Step 00 · 登録</p>
+    <h2 class="sec-title">まず、あなたのご登録をお願いします</h2>
+    <p class="sec-meta">氏名（またはハンドルネーム）とメールアドレスをご入力ください。<br>運気解釈・デジタル護符は、登録のメールアドレスへ納品いたします。</p>
+
+    <div class="card">
+      <p class="q-no">Registration</p>
+      <h3 class="q-ttl">お名前 / ハンドルネーム</h3>
+      <p class="q-desc">本名でも雅号・ハンドルネームでも構いません。</p>
+      <input type="text" class="inp" id="reg-name" placeholder="例：山田 花子　/ TakTempest" maxlength="40">
+    </div>
+
+    <div class="card">
+      <p class="q-no">Registration</p>
+      <h3 class="q-ttl">メールアドレス</h3>
+      <p class="q-desc">解釈・護符の納品先です。正確にご入力ください。</p>
+      <input type="email" class="inp" id="reg-email" placeholder="example@email.com">
+    </div>
+
+    <div class="notice">
+      <strong>個人情報の取り扱いについて</strong><br>
+      ご入力いただいた氏名・メールアドレスは、運気解釈・デジタル護符の納品のみに使用します。第三者への提供はいたしません。
+    </div>
+
+    <div class="sub-area">
+      <button class="btn-outline" onclick="proceedToStep1()"><span>次へ進む ›</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     STEP 1 : 五問 + 護符スタイル
+══════════════════════════════ -->
+<section class="section" id="step1-section">
+  <div class="sec-wrap">
+    <p class="sec-label">Step 01 · 五問＋護符スタイル</p>
+    <h2 class="sec-title">五問にお答えください</h2>
+    <p class="sec-meta">5つの問いへの回答と、デジタル護符のスタイル選択を同時に行ってください。<br>これらのデータが、あなただけの運気解釈と護符を生み出します。</p>
+
+    <!-- Q1 乱数 -->
+    <div class="card">
+      <p class="q-no">Question 01</p>
+      <h3 class="q-ttl">【乱数】<span class="q-en">Randomness</span></h3>
+      <p class="q-desc">0〜99の中から直感的な数字をひとつ。あなたのエントロピーの初期値となります。</p>
+      <div class="num-wrap">
+        <button class="num-btn" onclick="adjustNum(-1)">−</button>
+        <div class="num-disp" id="numDisp">42</div>
+        <button class="num-btn" onclick="adjustNum(1)">＋</button>
+      </div>
+      <input type="hidden" id="q1" value="42">
+    </div>
+
+    <!-- Q2 星座 -->
+    <div class="card">
+      <p class="q-no">Question 02</p>
+      <h3 class="q-ttl">【星座】<span class="q-en">Constellation</span></h3>
+      <p class="q-desc">お誕生日に対応する星座をお選びください。星の運行と生活圏のバランスを見ます。</p>
+      <select class="inp" id="q2">
+        <option value="">── 星座を選択 ──</option>
+        <option>牡羊座 (3/21–4/19)</option>
+        <option>牡牛座 (4/20–5/20)</option>
+        <option>双子座 (5/21–6/21)</option>
+        <option>蟹座 (6/22–7/22)</option>
+        <option>獅子座 (7/23–8/22)</option>
+        <option>乙女座 (8/23–9/22)</option>
+        <option>天秤座 (9/23–10/23)</option>
+        <option>蠍座 (10/24–11/22)</option>
+        <option>射手座 (11/23–12/21)</option>
+        <option>山羊座 (12/22–1/19)</option>
+        <option>水瓶座 (1/20–2/18)</option>
+        <option>魚座 (2/19–3/20)</option>
+      </select>
+    </div>
+
+    <!-- Q3 生活圏 -->
+    <div class="card">
+      <p class="q-no">Question 03</p>
+      <h3 class="q-ttl">【生活圏】<span class="q-en">Living Sphere</span></h3>
+      <p class="q-desc">主な生活環境をお選びください。</p>
+      <div class="radio-grid" id="q3g">
+        <label class="r-opt" onclick="selR(this,'q3')"><input type="radio" name="q3" value="A · Urban sphere（都市圏）"><div class="r-mark"></div><span class="r-lbl"><span class="r-alpha">A</span>Urban sphere<br>都市圏</span></label>
+        <label class="r-opt" onclick="selR(this,'q3')"><input type="radio" name="q3" value="B · Rural agricultural（田園農業圏）"><div class="r-mark"></div><span class="r-lbl"><span class="r-alpha">B</span>Rural agricultural<br>田園農業圏</span></label>
+        <label class="r-opt" onclick="selR(this,'q3')"><input type="radio" name="q3" value="C · Mountainous area（山間地帯）"><div class="r-mark"></div><span class="r-lbl"><span class="r-alpha">C</span>Mountainous<br>山間地帯</span></label>
+        <label class="r-opt" onclick="selR(this,'q3')"><input type="radio" name="q3" value="D · Fishing sphere（漁業圏）"><div class="r-mark"></div><span class="r-lbl"><span class="r-alpha">D</span>Fishing sphere<br>漁業圏</span></label>
+        <label class="r-opt" onclick="selR(this,'q3')"><input type="radio" name="q3" value="E · Other（その他）"><div class="r-mark"></div><span class="r-lbl"><span class="r-alpha">E</span>Other<br>その他</span></label>
+      </div>
+    </div>
+
+    <!-- Q4 同期 -->
+    <div class="card">
+      <p class="q-no">Question 04</p>
+      <h3 class="q-ttl">【同期】<span class="q-en">Sync</span></h3>
+      <p class="q-desc">今、あなたの脳裏をかすめる単語を3〜10文字で。都市や故郷の集合意識との共鳴を測ります。</p>
+      <input type="text" class="inp" id="q4" placeholder="例：銀河、夕映え、FRONTIER…" maxlength="10" oninput="countC('q4','c4',3,10)">
+      <div class="char-ct" id="c4">0 / 10文字</div>
+    </div>
+
+    <!-- Q5 増幅 -->
+    <div class="card">
+      <p class="q-no">Question 05</p>
+      <h3 class="q-ttl">【増幅】<span class="q-en">Amplification</span></h3>
+      <p class="q-desc">明日、朝一番に実行する「小さな儀式」を3〜20文字で。運気の振幅を決定する初速度です。</p>
+      <input type="text" class="inp" id="q5" placeholder="例：窓を開けて深呼吸する、コーヒーを一口味わう…" maxlength="20" oninput="countC('q5','c5',3,20)">
+      <div class="char-ct" id="c5">0 / 20文字</div>
+    </div>
+
+    <!-- 護符スタイル -->
+    <div class="card">
+      <p class="q-no">護符スタイル選択</p>
+      <h3 class="q-ttl">デジタル護符スタイル<span class="q-en">Digital Icon Style · Y × Z</span></h3>
+      <p class="q-desc">背景色（Y軸）× 背景ムード（Z軸）のマトリックスから、ひとつを選択してください。<br>チェックマークが入ったセルがあなたの護符スタイルになります。</p>
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th class="tone-th">ムード Z ╲ 色 Y</th>
+              <th class="color-th">①Green-golden<span class="color-sub" style="color:#7a9a50">緑金</span></th>
+              <th class="color-th">②Azure-golden<span class="color-sub" style="color:#5090c0">蒼金</span></th>
+              <th class="color-th">③Pink-golden<span class="color-sub" style="color:#c07060">桃金</span></th>
+              <th class="color-th">④Pink-silver<span class="color-sub" style="color:#c080b0">桃銀</span></th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px;font-size:11px;color:var(--white-dim);opacity:.6" id="style-selected-label">── スタイル未選択 ──</p>
+    </div>
+
+    <div class="sub-area">
+      <button class="btn-outline" onclick="proceedToStep2()"><span>確認画面へ ›</span></button>
+      <p class="sub-note">入力内容を確認してから送信します</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     STEP 2 : 確認 & 送信
+══════════════════════════════ -->
+<section class="section" id="step2-section">
+  <div class="sec-wrap">
+    <p class="sec-label">Step 02 · 確認＆送信</p>
+    <h2 class="sec-title">入力内容をご確認ください</h2>
+    <p class="sec-meta">以下の内容でTakTempestへ送信します。送信後、note決済画面へご案内します。</p>
+
+    <div class="confirm-box" id="confirm-box">
+      <!-- dynamically filled -->
+    </div>
+
+    <div class="notice">
+      <strong>送信後の流れ：</strong><br>
+      ① 入力データがTakTempest（jgt25yhpp@gmail.com）へ自動送信されます。<br>
+      ② 続けてnoteの購読決済画面へ移動します。決済をお済ませください。<br>
+      ③ 決済完了通知を受けてから <strong>48時間以内</strong> に、登録メールアドレスへ「運気解釈」と「デジタル護符」を納品いたします。
+    </div>
+
+    <div id="send-area" class="sub-area">
+      <button class="btn-outline" onclick="sendAndProceed()" id="send-btn"><span>送信して決済へ進む ◈</span></button>
+      <p class="sub-note">※ 送信後、自動的にnote決済画面へ遷移します</p>
+    </div>
+
+    <div id="send-loading" style="display:none">
+      <div class="loading"><div class="dots"><span></span><span></span><span></span></div><span>送信中…</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     STEP 3 : 完了
+══════════════════════════════ -->
+<section class="section" id="step3-section">
+  <div class="sec-wrap">
+    <p class="sec-label">Step 03 · 送信完了</p>
+    <div class="complete-box">
+      <div class="complete-icon">☽</div>
+      <h2 class="complete-title">申し込みを受け付けました</h2>
+      <p class="complete-body">
+        入力内容はTakTempestへ送信されました。<br>
+        まもなくnote購読決済画面が開きます。<br>
+        開かない場合は下のボタンから決済へお進みください。<br><br>
+        <strong>決済完了後、48時間以内に</strong><br>
+        登録メールアドレスへ運気解釈・デジタル護符を納品いたします。<br>
+        しばらくお待ちください。
+      </p>
+      <a id="note-link" href="#" target="_blank" class="btn-outline" style="display:inline-block"><span>note 決済画面を開く ›</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ EMAILJS SETUP GUIDE (開発者向け) ══ -->
+<section class="section show" id="setup-guide" style="padding-top:0">
+  <div class="sec-wrap">
+    <details class="setup-panel">
+      <summary>【サイト管理者向け】EmailJS セットアップ手順</summary>
+      <div style="margin-top:16px">
+        <p>このサイトはEmailJSを使い、APIキー不要でブラウザからメールを送信します。</p>
+        <br>
+        <p><strong style="color:var(--gold)">① EmailJSアカウント作成</strong></p>
+        <p>→ <code>https://www.emailjs.com</code> で無料登録（月200通まで無料）</p>
+        <br>
+        <p><strong style="color:var(--gold)">② Email Serviceを追加</strong></p>
+        <p>→ ダッシュボード &gt; Email Services &gt; Gmailを連携<br>
+           → 表示される <code>Service ID</code> をコピー</p>
+        <br>
+        <p><strong style="color:var(--gold)">③ Email Templateを作成</strong></p>
+        <p>→ Email Templates &gt; 新規作成<br>
+           → To: <code>jgt25yhpp@gmail.com</code><br>
+           → Subject: <code>【東京陰陽師】運気解釈依頼 - {{client_name}}</code><br>
+           → Body: 下記変数をテンプレートに配置<br>
+           <code>{{client_name}} {{client_email}} {{q1}} {{q2}} {{q3}} {{q4}} {{q5}} {{style}} {{submitted_at}}</code><br>
+           → 表示される <code>Template ID</code> をコピー</p>
+        <br>
+        <p><strong style="color:var(--gold)">④ Public Keyを取得</strong></p>
+        <p>→ Account &gt; General &gt; Public Key をコピー</p>
+        <br>
+        <p><strong style="color:var(--gold)">⑤ 下記3行をこのHTMLファイルに設定</strong></p>
+        <p>→ スクリプト冒頭の以下の定数を書き換えてください：</p>
+        <p><code>const EMAILJS_SERVICE_ID = 'your_service_id';</code><br>
+           <code>const EMAILJS_TEMPLATE_ID = 'your_template_id';</code><br>
+           <code>const EMAILJS_PUBLIC_KEY  = 'your_public_key';</code></p>
+        <br>
+        <p><strong style="color:var(--gold)">⑥ note購読URLを設定</strong></p>
+        <p>→ <code>const NOTE_PAYMENT_URL = 'https://note.com/あなたのnoteのメンバーシップURL';</code></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <p class="ft-brand">TOKYO ONMYOJI · 式神アーサー</p>
+  <p class="ft-note">本サービスは「占い」ではなく確率的統計論とAI解釈による「運気の解読」です。<br>© 2025 東京陰陽師 All rights reserved.</p>
+</footer>
+
+<!-- ══════════════════════════════
+     JAVASCRIPT
+══════════════════════════════ -->
+<script>
+/* ═══════════════════════════════
+   !! REPLACE THESE 4 VALUES !!
+   EmailJS ダッシュボードで取得してください
+═══════════════════════════════ */
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // ← 書き換え
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // ← 書き換え
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // ← 書き換え
+const NOTE_PAYMENT_URL    = 'https://note.com/taktempest222tt/membership'; // ← note購読URLに書き換え
+
+/* EmailJS init */
+emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+/* ═══ STATE ═══ */
+let regData   = { name:'', email:'' };
+let formData  = {};
+let selectedStyle = null;
+
+/* ═══ STEP NAV HELPERS ═══ */
+function activateNav(step){
+  ['snav0','snav1','snav2','snav3'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i < step) el.classList.add('done');
+    if(i === step) el.classList.add('active');
+  });
+}
+function showSection(id){
+  ['step0-section','step1-section','step2-section','step3-section'].forEach(s=>{
+    document.getElementById(s).classList.remove('show');
+  });
+  document.getElementById(id).classList.add('show');
+  document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showStep0(){ activateNav(0); showSection('step0-section'); }
+
+/* ═══ Q1 NUMBER ═══ */
+let numVal = 42;
+function adjustNum(d){
+  numVal = Math.max(0, Math.min(99, numVal+d));
+  document.getElementById('numDisp').textContent = String(numVal).padStart(2,'0');
+  document.getElementById('q1').value = numVal;
+}
+
+/* ═══ Q3 RADIO ═══ */
+function selR(el){
+  document.querySelectorAll('#q3g .r-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+/* ═══ CHAR COUNTER ═══ */
+function countC(iid, cid, mn, mx){
+  const v = document.getElementById(iid).value;
+  const l = [...v].length;
+  const el = document.getElementById(cid);
+  el.textContent = `${l} / ${mx}文字`;
+  el.style.color = (l>=mn && l<=mx) ? 'var(--gold)' : 'var(--red-br)';
+}
+
+/* ═══ MATRIX BUILD ═══ */
+const TONES  = ['⑤ Classy','⑥ Sublime','⑦ Joyful','⑧ Serene','⑨ Fantastic','➉ Stable'];
+const COLORS = ['① Green-golden','② Azure-golden','③ Pink-golden','④ Pink-silver'];
+
+function buildMatrix(){
+  const tbody = document.getElementById('matrixBody');
+  if(tbody.children.length) return; // already built
+  TONES.forEach((t,ti)=>{
+    const tr = document.createElement('tr');
+    const th = document.createElement('th');
+    th.className='tone-th'; th.textContent=t;
+    tr.appendChild(th);
+    COLORS.forEach((c,ci)=>{
+      const td = document.createElement('td');
+      td.className='cell';
+      td.innerHTML='<span class="chk">✓</span>';
+      td.onclick=()=>selectStyle(ti,ci,t,c,td);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function selectStyle(ti,ci,tone,color,td){
+  document.querySelectorAll('.matrix .cell').forEach(c=>c.classList.remove('checked'));
+  td.classList.add('checked');
+  selectedStyle = { tone, color, code:`Y:${ci+1} × Z:${ti+5}` };
+  document.getElementById('style-selected-label').textContent = `選択中：${color}  ×  ${tone}`;
+  document.getElementById('style-selected-label').style.color = 'var(--gold)';
+}
+
+/* ═══ STEP 0 → 1 ═══ */
+function proceedToStep1(){
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  if(!name)  { alert('お名前・ハンドルネームをご入力ください'); return; }
+  if(!email || !email.includes('@')) { alert('有効なメールアドレスをご入力ください'); return; }
+  regData = { name, email };
+  buildMatrix();
+  activateNav(1);
+  showSection('step1-section');
+}
+
+/* ═══ STEP 1 → 2 ═══ */
+function proceedToStep2(){
+  const q2  = document.getElementById('q2').value;
+  const q3v = document.querySelector('input[name="q3"]:checked');
+  const q4  = document.getElementById('q4').value.trim();
+  const q5  = document.getElementById('q5').value.trim();
+
+  if(!q2)   { alert('【星座】をお選びください'); return; }
+  if(!q3v)  { alert('【生活圏】をお選びください'); return; }
+  if([...q4].length < 3) { alert('【同期】は3文字以上でご入力ください'); return; }
+  if([...q5].length < 3) { alert('【増幅】は3文字以上でご入力ください'); return; }
+  if(!selectedStyle) { alert('護符スタイルをマトリックスから選択してください'); return; }
+
+  formData = {
+    q1: String(numVal).padStart(2,'0'),
+    q2, q3: q3v.value, q4, q5,
+    style: `${selectedStyle.color} × ${selectedStyle.tone}`
+  };
+
+  buildConfirm();
+  activateNav(2);
+  showSection('step2-section');
+}
+
+function buildConfirm(){
+  const rows = [
+    ['お名前',          regData.name],
+    ['メールアドレス',  regData.email],
+    ['乱数',            formData.q1],
+    ['星座',            formData.q2],
+    ['生活圏',          formData.q3],
+    ['同期ワード',      formData.q4],
+    ['増幅（晨の儀式）',formData.q5],
+    ['護符スタイル',    formData.style],
+  ];
+  const box = document.getElementById('confirm-box');
+  box.innerHTML = '<h3>◈ 申込内容確認</h3>' +
+    rows.map(([l,v])=>`<div class="confirm-row"><span class="confirm-label">${l}</span><span class="confirm-val">${v||'—'}</span></div>`).join('');
+}
+
+/* ═══ SEND & PROCEED ═══ */
+async function sendAndProceed(){
+  document.getElementById('send-area').style.display='none';
+  document.getElementById('send-loading').style.display='block';
+
+  const params = {
+    client_name:  regData.name,
+    client_email: regData.email,
+    q1: formData.q1,
+    q2: formData.q2,
+    q3: formData.q3,
+    q4: formData.q4,
+    q5: formData.q5,
+    style: formData.style,
+    submitted_at: new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})
+  };
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+  } catch(e){
+    console.warn('EmailJS error:', e);
+    // EmailJS未設定でもフローを止めない（開発中はcontinue）
+  }
+
+  // ─ 完了画面へ ─
+  document.getElementById('send-loading').style.display='none';
+  activateNav(3);
+  showSection('step3-section');
+
+  // note決済URLをセット & 自動遷移
+  const noteLink = document.getElementById('note-link');
+  noteLink.href = NOTE_PAYMENT_URL;
+
+  // 1.5秒後に自動で開く
+  setTimeout(()=>{
+    window.open(NOTE_PAYMENT_URL, '_blank');
+  }, 1500);
+}
+
+/* ═══ INIT ═══ */
+activateNav(0);
+</script>
+</body>
+</html>
