@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEM Fuel Cell — Manufacturing Process</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #111; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: "Helvetica Neue", Arial, sans-serif; }
+#wrap { width: 760px; border-radius: 12px; overflow: hidden; background: #1a3a1a; }
+#screen { display: flex; height: 480px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+#left-panel { width: 33%; flex-shrink: 0; padding: 20px 18px 16px 20px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.32); overflow: hidden; }
+#right-panel { flex: 1; position: relative; overflow: hidden; }
+canvas#vc { width: 100%; height: 100%; display: block; }
+#scene-title { font-size: 11px; font-weight: 500; letter-spacing: 2px; color: #c8e67a; text-transform: uppercase; }
+#flash-title { font-size: 17px; font-weight: 700; color: #f5f0c0; line-height: 1.3; min-height: 50px; transition: opacity 0.3s; }
+#flash-body { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.8; flex: 1; transition: opacity 0.3s 0.1s; }
+#flash-specs { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 10px; transition: opacity 0.3s 0.2s; }
+.spec-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; gap: 6px; }
+.spec-key { color: rgba(255,255,255,0.5); white-space: nowrap; }
+.spec-val { color: #f5d76e; font-weight: 500; text-align: right; }
+#step-indicator { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-align: right; }
+#hud { position: absolute; top: 10px; right: 12px; font-family: monospace; font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.7; text-align: right; pointer-events: none; }
+#hud .spd { color: #f5d76e; }
+#filmbar { height: 26px; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; }
+.sprocket { width: 14px; height: 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0; margin: 0 3px; }
+#controls { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: rgba(0,0,0,0.3); }
+#progress-track { flex: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; cursor: pointer; overflow: hidden; }
+#progress-fill { height: 100%; background: #c8b830; width: 0%; border-radius: 3px; }
+.cbtn { font-size: 13px; padding: 6px 16px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #f5f0c0; cursor: pointer; white-space: nowrap; user-select: none; }
+.cbtn:hover { background: rgba(255,255,255,0.18); }
+#spd-btn { color: #f5d76e; border-color: #c8b830; }
+#scene-dots { display: flex; gap: 5px; padding: 8px 16px 12px; flex-wrap: wrap; background: rgba(0,0,0,0.2); }
+.sdot { font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s; white-space: nowrap; user-select: none; }
+.sdot.active { background: #c8b830; color: #1a1200; border-color: #c8b830; font-weight: 600; }
+.sdot.done { color: #9FE1CB; border-color: #5DCAA5; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="screen">
+    <div id="left-panel">
+      <div id="scene-title" data-idx="-1">Step 01 / 07</div>
+      <div id="flash-title">Material Preparation</div>
+      <div id="flash-body">Four key materials are gathered before assembly begins. The thickness and purity of each component directly determine the cell's power output and lifespan.</div>
+      <div id="flash-specs">
+        <div class="spec-row"><span class="spec-key">Membrane thickness</span><span class="spec-val">50 μm</span></div>
+        <div class="spec-row"><span class="spec-key">Active area</span><span class="spec-val">5 cm²</span></div>
+        <div class="spec-row"><span class="spec-key">Pt loading</span><span class="spec-val">20–40 wt%</span></div>
+      </div>
+      <div id="step-indicator">▶ 2x</div>
+    </div>
+    <div id="right-panel">
+      <canvas id="vc"></canvas>
+      <div id="hud"><div class="spd" id="h-spd">2x</div><div id="h-time">00:00</div></div>
+    </div>
+  </div>
+  <div id="filmbar">
+    <div style="display:flex;gap:3px" id="sp-l"></div>
+    <div style="font-family:monospace;font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:3px">PEM FUEL CELL PRO</div>
+    <div style="display:flex;gap:3px" id="sp-r"></div>
+  </div>
+  <div id="controls">
+    <button class="cbtn" id="play-btn">Pause</button>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <button class="cbtn" id="spd-btn">2x</button>
+  </div>
+  <div id="scene-dots"></div>
+</div>
+<script>
+(function(){
+const CW=510, CH=480;
+const cv=document.getElementById('vc');
+cv.width=CW; cv.height=CH;
+const cx=cv.getContext('2d');
+const SPEEDS=[1,2,4,8];
+let si=1,playing=true,t=0,lastTs=null,sprOff=0;
+const SCENES=[
+  {label:'① Materials',num:'01',title:'Material Preparation',
+   body:"Four key materials are gathered before assembly begins. The thickness and purity of each component directly determine the cell's power output and lifespan.",
+   specs:[['Membrane thickness','50 μm'],['Active area','5 cm²'],['Pt loading','20–40 wt%']],dur:4.5,fn:drawPrep},
+  {label:'② Catalyst Ink',num:'02',title:'Catalyst Ink Preparation',
+   body:'Pt/C catalyst, Nafion solution, IPA, and ultrapure water are precisely blended. Ultrasonic dispersion for 30 minutes ensures a uniform suspension critical for electrode performance.',
+   specs:[['Dispersion time','30 min'],['Nafion content','5 wt%'],['Solvent','IPA + ultrapure water']],dur:4,fn:drawInk},
+  {label:'③ Coating',num:'03',title:'Catalyst Layer Screen Printing',
+   body:'Catalyst ink is screen-printed evenly onto carbon-paper GDL. After drying at 80°C for 30 minutes, the anode and cathode carry different Pt loadings by design.',
+   specs:[['Anode loading','0.1 mg Pt/cm²'],['Cathode loading','0.4 mg Pt/cm²'],['Drying','80°C × 30 min']],dur:4,fn:drawCoat},
+  {label:'④ Hot Press',num:'04',title:'Hot Press — MEA Bonding',
+   body:'Two catalyst-coated GDLs sandwich the Nafion membrane and are hot-pressed to form the MEA. Bond quality is the single greatest factor in cell longevity.',
+   specs:[['Temperature','130–135°C'],['Pressure','1–2 MPa'],['Duration','5–10 min']],dur:4,fn:drawPress},
+  {label:'⑤ Stack',num:'05',title:'Cell Stack Assembly',
+   body:'The MEA is stacked between graphite separators, copper current collectors, and aluminum end plates to build the single-cell stack. Component parallelism is critical.',
+   specs:[['Configuration','7-layer stack'],['Cell count','1 (single cell)'],['Separator','Graphite composite']],dur:5,fn:drawStack},
+  {label:'⑥ Sealing',num:'06',title:'Gasket Placement & Bolt Tightening',
+   body:'PTFE gaskets seal the gas pathways, and M6 stainless bolts are tightened diagonally in sequence. Precise torque control prevents leaks without crushing the MEA.',
+   specs:[['Gasket','PTFE 250 μm'],['Bolts','M6 stainless steel'],['Torque','4–6 N·m']],dur:4,fn:drawSeal},
+  {label:'⑦ Testing',num:'07',title:'Leak Test → Conditioning → Power',
+   body:'After an N₂ leak check, H₂ and air are supplied in stages to activate the catalyst. Steady-state power generation is confirmed by recording the I-V characteristic curve.',
+   specs:[['Test pressure','N₂ 0.1 MPa'],['Open-circuit voltage','~0.72 V'],['Peak output','~0.86 W']],dur:5.5,fn:drawTest},
+];
+const TOTAL=SCENES.reduce((a,s)=>a+s.dur,0);
+const cumDur=[];
+SCENES.forEach((s,i)=>{cumDur[i]=i===0?0:cumDur[i-1]+SCENES[i-1].dur;});
+function curScene(){for(let i=SCENES.length-1;i>=0;i--)if(t>=cumDur[i])return{s:SCENES[i],p:(t-cumDur[i])/SCENES[i].dur,idx:i};return{s:SCENES[0],p:0,idx:0};}
+function eio(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+function lerp(a,b,x){return a+(b-a)*x;}
+function drawBg(){const g=cx.createLinearGradient(0,0,CW,CH);g.addColorStop(0,'#0f2210');g.addColorStop(0.45,'#1e4015');g.addColorStop(0.8,'#3a6018');g.addColorStop(1,'#5a7a10');cx.fillStyle=g;cx.fillRect(0,0,CW,CH);}
+function pill(x,y,w,h,r,fill,stroke,sw){sw=sw||0.8;cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();if(fill){cx.fillStyle=fill;cx.fill();}if(stroke){cx.strokeStyle=stroke;cx.lineWidth=sw;cx.stroke();}}
+function txt(s,x,y,sz,col,wt,al){wt=wt||'400';al=al||'center';cx.font=wt+' '+sz+'px "Helvetica Neue",Arial,sans-serif';cx.fillStyle=col;cx.textAlign=al;cx.textBaseline='middle';cx.fillText(s,x,y);}
+function scanline(){cx.fillStyle='rgba(0,0,0,0.04)';for(var y=0;y<CH;y+=3)cx.fillRect(0,y,CW,1);}
+function grain(){cx.save();for(var i=0;i<110;i++){cx.globalAlpha=Math.random()*0.04;cx.fillStyle='#fff';cx.beginPath();cx.arc(Math.random()*CW,Math.random()*CH,Math.random()*1.5,0,Math.PI*2);cx.fill();}cx.restore();}
+function flashCut(p){if(p<0.07){var a=(1-p/0.07)*0.6;cx.fillStyle='rgba(240,230,140,'+a+')';cx.fillRect(0,0,CW,CH);}}
+function drawPrep(p){drawBg();txt('Materials Overview',CW/2,38,21,'#f5f0c0','700');var items=[{col:'#85B7EB',label:'Nafion Membrane',sub:'PEM · 50 μm',x:88},{col:'#EF9F27',label:'Pt/C Catalyst',sub:'20–40 wt%',x:220},{col:'#5DCAA5',label:'GDL Carbon Paper',sub:'Gas diffusion layer',x:352},{col:'#F0997B',label:'PTFE Gasket',sub:'Sealing material',x:462}];items.forEach(function(it,i){var delay=i*0.16;var ep=eio(Math.max(0,Math.min(1,(p-delay)/(1-delay))));var y=lerp(CH+60,210,ep);cx.globalAlpha=ep;pill(it.x-62,y-60,124,112,8,it.col+'22',it.col,1.2);txt(it.label,it.x,y-22,13,'#f5f0c0','600');txt(it.sub,it.x,y+8,11,'rgba(255,255,255,0.6)','400');cx.globalAlpha=1;});if(p>0.55){var ep2=eio((p-0.55)/0.45);cx.globalAlpha=ep2;pill(CW/2-160,315,320,52,8,'rgba(200,184,48,0.12)','#c8b830',1);txt('Store all materials at room temp, dry conditions',CW/2,341,12,'#f5d76e','400');cx.globalAlpha=1;}}
+function drawInk(p){drawBg();txt('Catalyst Ink Preparation',CW/2,38,21,'#f5f0c0','700');var bx=60,by=90,bw=150,bh=210;pill(bx,by,bw,bh,8,'rgba(0,0,0,0.3)','rgba(255,255,255,0.25)',1);var lh=Math.min(p,0.88)*190;cx.fillStyle='rgba(55,138,221,0.3)';cx.fillRect(bx+3,by+bh-lh-3,bw-6,lh);cx.strokeStyle='#378ADD';cx.lineWidth=1.5;cx.beginPath();for(var x=0;x<=bw-6;x+=3){var wy=Math.sin(x*0.18+t*7)*2.5;if(x===0)cx.moveTo(bx+3+x,by+bh-lh-3+wy);else cx.lineTo(bx+3+x,by+bh-lh-3+wy);}cx.stroke();txt('Beaker',bx+bw/2,by+bh+20,13,'rgba(255,255,255,0.45)','400');if(p>0.28){var n=Math.floor(Math.min(1,(p-0.28)/0.5)*22);cx.fillStyle='#EF9F27';for(var i=0;i<n;i++){var ang=i/n*Math.PI*2+t*2.5;var r=30+Math.sin(i*1.7+t*3)*10;cx.beginPath();cx.arc(bx+bw/2+Math.cos(ang)*r,by+bh-lh/2+Math.sin(ang)*r*0.5,3.5,0,Math.PI*2);cx.fill();}txt('Pt/C dispersing',bx+bw/2,by+bh-lh/2+56,13,'#EF9F27','600');}var steps=[{t:'Pt/C + Nafion solution',c:'#85B7EB'},{t:'Add IPA + ultrapure water',c:'#9FE1CB'},{t:'Ultrasonic dispersion 30 min',c:'#EF9F27'},{t:'Check ink viscosity',c:'#F0997B'}];steps.forEach(function(s,i){var sp=eio(Math.min(1,Math.max(0,(p-i*0.2)/0.28)));cx.globalAlpha=sp;pill(242,96+i*72,240,56,6,'rgba(255,255,255,0.06)',s.c,0.7);txt(s.t,362,124+i*72,13,'rgba(255,255,255,0.88)','400');cx.globalAlpha=1;});}
+function drawCoat(p){drawBg();txt('Catalyst Layer — Screen Printing',CW/2,38,21,'#f5f0c0','700');var gx=48,gy=90,gw=190,gh=260;pill(gx,gy,gw,gh,4,'rgba(0,0,0,0.35)','rgba(255,255,255,0.2)',0.8);txt('GDL',gx+gw/2,gy+gh-18,13,'rgba(255,255,255,0.4)','400');var coatH=Math.min(p*1.1,1)*gh;var cg=cx.createLinearGradient(0,gy+gh-coatH,0,gy+gh);cg.addColorStop(0,'rgba(239,159,39,0.2)');cg.addColorStop(1,'rgba(239,159,39,0.55)');cx.fillStyle=cg;cx.fillRect(gx+2,gy+gh-coatH,gw-4,coatH);if(coatH>25)txt('Pt/C catalyst layer',gx+gw/2,gy+gh-coatH/2,13,'#EF9F27','600');if(p>0.18){var sqy=lerp(gy-72,gy+8,eio(Math.min(1,(p-0.18)/0.55)));cx.strokeStyle='#5DCAA5';cx.lineWidth=4.5;cx.strokeRect(gx-12,sqy,gw+24,12);txt('Squeegee',gx+gw/2,sqy-20,13,'#9FE1CB','600');}var info=[{t:'Anode loading',v:'0.1 mg Pt/cm²',c:'#85B7EB'},{t:'Cathode loading',v:'0.4 mg Pt/cm²',c:'#EF9F27'},{t:'Drying conditions',v:'80°C × 30 min',c:'#F0997B'}];info.forEach(function(s,i){var sp=eio(Math.min(1,Math.max(0,(p-0.45-i*0.15)/0.25)));cx.globalAlpha=sp;pill(268,96+i*74,214,58,6,'rgba(255,255,255,0.06)',s.c,0.7);txt(s.t,375,116+i*74,12,'rgba(255,255,255,0.55)','400');txt(s.v,375,138+i*74,14,s.c,'600');cx.globalAlpha=1;});}
+function drawPress(p){drawBg();txt('Hot Press — MEA Bonding',CW/2,38,21,'#f5f0c0','700');var cx2=CW/2-10,my=245;var layers=[{col:'#85B7EB',label:'GDL (Anode side)'},{col:'#EF9F27',label:'Catalyst layer (An)'},{col:'#F0997B',label:'Nafion membrane'},{col:'#EF9F27',label:'Catalyst layer (Ca)'},{col:'#5DCAA5',label:'GDL (Cathode side)'}];var ep=eio(Math.min(Math.max(p,0),1));var gap=lerp(20,3,ep);var totalH=layers.length*(28+gap)-gap;var curY=my-totalH/2;layers.forEach(function(l){pill(cx2-160,curY,320,28,3,l.col+'2a',l.col,1);txt(l.label,cx2,curY+14,14,'rgba(255,255,255,0.9)','500');curY+=28+gap;});if(p>0.1){var py=lerp(my-totalH/2-76,my-totalH/2-14,eio(Math.min((p-0.1)/0.5,1)));cx.fillStyle='rgba(180,170,100,0.45)';cx.fillRect(cx2-170,py,340,14);cx.strokeStyle='#c8b830';cx.lineWidth=1;cx.strokeRect(cx2-170,py,340,14);txt('Upper platen  130°C',cx2,py-17,13,'#f5d76e','600');var py2=lerp(my+totalH/2+76,my+totalH/2+1,eio(Math.min((p-0.1)/0.5,1)));cx.fillStyle='rgba(180,170,100,0.45)';cx.fillRect(cx2-170,py2,340,14);cx.strokeStyle='#c8b830';cx.lineWidth=1;cx.strokeRect(cx2-170,py2,340,14);txt('Lower platen  1–2 MPa',cx2,py2+27,13,'#f5d76e','600');}if(p>0.78){cx.globalAlpha=eio((p-0.78)/0.22);pill(cx2-128,388,256,42,8,'rgba(93,202,165,0.15)','#5DCAA5',1);txt('MEA bonding complete',cx2,409,16,'#9FE1CB','700');cx.globalAlpha=1;}}
+function drawStack(p){drawBg();txt('Cell Stack Assembly',CW/2,38,21,'#f5f0c0','700');var parts=[{col:'#5a5a52',label:'End plate (Al alloy)'},{col:'#a0a090',label:'Current collector (Au-plated Cu)'},{col:'#6a6a60',label:'Separator (Anode)'},{col:'#EF9F27',label:'MEA (Membrane Electrode Assembly)'},{col:'#6a6a60',label:'Separator (Cathode)'},{col:'#a0a090',label:'Current collector (Au-plated Cu)'},{col:'#5a5a52',label:'End plate (Al alloy)'}];var asmb=Math.min(p*1.15,1);parts.forEach(function(pt,i){var delay=i*0.1;var pp=eio(Math.min(1,Math.max(0,(asmb-delay)/0.5)));var ty=82+i*46;var y=lerp(ty+(i<3?-210:210),ty,pp);cx.globalAlpha=pp;pill(52,y,378,38,4,pt.col+'33',pt.col,1);txt(pt.label,241,y+19,13,'rgba(255,255,255,0.9)','500');cx.globalAlpha=1;});if(p>0.6){var sp=eio((p-0.6)/0.4);cx.globalAlpha=sp;txt('Active area: 5 cm²',448,210,13,'#9FE1CB','600');txt('Cell count: 1',448,236,13,'#9FE1CB','600');txt('Separator: Graphite',448,262,13,'#9FE1CB','600');cx.globalAlpha=1;}}
+function drawSeal(p){drawBg();txt('Gasket Placement & Bolt Tightening',CW/2,38,20,'#f5f0c0','700');var bx=80,by=90,bw=320,bh=230;pill(bx,by,bw,bh,10,'rgba(0,0,0,0.3)','rgba(255,255,255,0.2)',1);pill(bx+12,by+12,bw-24,bh-24,7,'transparent','rgba(93,202,165,0.35)',1);txt('Stack cross-section',bx+bw/2,by+bh/2-14,14,'rgba(255,255,255,0.45)','400');txt('Gaskets seated',bx+bw/2,by+bh/2+14,14,'#9FE1CB','600');var bolts=[{x:bx-17,y:by-17},{x:bx+bw+2,y:by-17},{x:bx-17,y:by+bh+2},{x:bx+bw+2,y:by+bh+2}];bolts.forEach(function(b,i){var sp=eio(Math.min(1,Math.max(0,(p-0.25-i*0.12)/0.25)));if(sp<=0)return;cx.globalAlpha=sp;cx.save();cx.translate(b.x+11,b.y+11);cx.rotate(p*Math.PI*4*(i%2===0?1:-1));cx.fillStyle='#c8b830';cx.beginPath();cx.arc(0,0,14,0,Math.PI*2);cx.fill();cx.strokeStyle='#7a6010';cx.lineWidth=1.5;cx.beginPath();cx.arc(0,0,7,0,Math.PI*2);cx.stroke();for(var k=0;k<6;k++){var a=k/6*Math.PI*2;cx.beginPath();cx.moveTo(Math.cos(a)*4,Math.sin(a)*4);cx.lineTo(Math.cos(a)*11,Math.sin(a)*11);cx.stroke();}cx.restore();cx.globalAlpha=1;});if(p>0.5){var torq=eio((p-0.5)/0.5)*6;txt('Tightening torque: '+torq.toFixed(1)+' N·m',bx+bw/2,368,16,'#f5d76e','700');}}
+function drawTest(p){drawBg();txt('Leak Test → Conditioning → Power Generation',CW/2,38,17,'#f5f0c0','700');if(p<0.3){var pp=p/0.3;txt('Leak Test',CW/2,158,17,'#85B7EB','600');txt('N₂ pressurized at 0.1 MPa',CW/2,184,14,'rgba(255,255,255,0.6)','400');cx.strokeStyle='#378ADD';cx.lineWidth=3.5;cx.beginPath();cx.arc(CW/2,282,60,0,Math.min(pp,1)*Math.PI*2);cx.stroke();if(pp>0.78){cx.fillStyle='rgba(93,202,165,0.12)';cx.beginPath();cx.arc(CW/2,282,60,0,Math.PI*2);cx.fill();txt('PASS',CW/2,282,24,'#9FE1CB','700');}}else if(p<0.62){var pp2=(p-0.3)/0.32;txt('Conditioning (Activation)',CW/2,86,17,'#EF9F27','600');var bars=[{l:'H₂/N₂ blend',c:'#378ADD',th:0.0},{l:'H₂ / Air',c:'#5DCAA5',th:0.3},{l:'Steady-state',c:'#c8b830',th:0.62}];bars.forEach(function(b,i){var bp=Math.max(0,Math.min(1,(pp2-b.th)/0.32));pill(48,124+i*80,Math.max(6,bp*404),54,4,b.c+'33',b.c,0.8);txt(b.l,44,151+i*80,13,'rgba(255,255,255,0.7)','400','right');txt(Math.round(bp*100)+'%',464,151+i*80,13,'rgba(255,255,255,0.55)','400','left');});txt('Activation process: 2–4 hours',CW/2,374,13,'rgba(255,255,255,0.45)','400');}else{var pp3=(p-0.62)/0.38;txt('Generating Power',CW/2,74,17,'#9FE1CB','700');var volt=lerp(0,0.72,eio(pp3));var curr=lerp(0,1.2,eio(pp3));var pw=volt*curr;[{l:'Voltage',v:volt.toFixed(2),u:'V',c:'#9FE1CB',x:106},{l:'Current',v:curr.toFixed(2),u:'A',c:'#85B7EB',x:256},{l:'Power',v:pw.toFixed(2),u:'W',c:'#f5d76e',x:406}].forEach(function(m){pill(m.x-62,100,124,98,8,'rgba(0,0,0,0.3)',m.c+'88',0.7);txt(m.l,m.x,124,13,'rgba(255,255,255,0.5)','400');txt(m.v,m.x,158,28,m.c,'700');txt(m.u,m.x,190,13,'rgba(255,255,255,0.5)','400');});var hLen=Math.floor(pp3*72);cx.strokeStyle='#c8b830';cx.lineWidth=2;cx.beginPath();for(var i=0;i<hLen;i++){var hx=26+i*6.5;var hy=308-20*eio(i/hLen)-Math.sin(i*0.22)*12;if(i===0)cx.moveTo(hx,hy);else cx.lineTo(hx,hy);}cx.stroke();txt('I-V characteristic curve',CW/2,364,13,'rgba(255,255,255,0.4)','400');if(pp3>0.55){cx.globalAlpha=eio((pp3-0.55)/0.45);txt('H₂O produced',426,302,14,'#5DCAA5','600');for(var d=0;d<10;d++){cx.fillStyle='#5DCAA5';cx.beginPath();cx.arc(410+Math.cos(d*0.7+t*2)*16,324+d*8,4.5,0,Math.PI*2);cx.fill();}cx.globalAlpha=1;}}}
+function updateLeft(info){var sceneEl=document.getElementById('scene-title');var prevIdx=parseInt(sceneEl.dataset.idx);var idx=info.idx,s=info.s;if(prevIdx!==idx){sceneEl.dataset.idx=idx;var ft=document.getElementById('flash-title');var fb=document.getElementById('flash-body');var fs=document.getElementById('flash-specs');ft.style.opacity='0';fb.style.opacity='0';fs.style.opacity='0';setTimeout(function(){sceneEl.textContent='Step '+s.num+' / 07';ft.textContent=s.title;fb.textContent=s.body;fs.innerHTML=s.specs.map(function(r){return'<div class="spec-row"><span class="spec-key">'+r[0]+'</span><span class="spec-val">'+r[1]+'</span></div>';}).join('');ft.style.opacity='1';fb.style.opacity='1';fs.style.opacity='1';},150);}document.getElementById('step-indicator').textContent='▶ '+SPEEDS[si]+'x';}
+function buildUI(){['sp-l','sp-r'].forEach(function(id){var el=document.getElementById(id);for(var i=0;i<9;i++){var s=document.createElement('div');s.className='sprocket';el.appendChild(s);}});var el=document.getElementById('scene-dots');SCENES.forEach(function(s,i){var d=document.createElement('div');d.className='sdot';d.id='dot-'+i;d.textContent=s.label;d.addEventListener('click',function(){t=cumDur[i];});el.appendChild(d);});}
+buildUI();
+document.getElementById('play-btn').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play';if(playing)lastTs=null;});
+document.getElementById('spd-btn').addEventListener('click',function(){si=(si+1)%SPEEDS.length;this.textContent=SPEEDS[si]+'x';document.getElementById('h-spd').textContent=SPEEDS[si]+'x';});
+document.getElementById('progress-track').addEventListener('click',function(e){var r=this.getBoundingClientRect();t=Math.max(0,Math.min(TOTAL,(e.clientX-r.left)/r.width*TOTAL));});
+function updateHUD(idx){var mins=Math.floor(t/60).toString().padStart(2,'0');var secs=Math.floor(t%60).toString().padStart(2,'0');document.getElementById('h-time').textContent=mins+':'+secs;document.getElementById('progress-fill').style.width=(t/TOTAL*100)+'%';SCENES.forEach(function(_,i){var d=document.getElementById('dot-'+i);if(d)d.className='sdot'+(i===idx?' active':i<idx?' done':'');});sprOff=(sprOff+SPEEDS[si]*0.4)%18;document.querySelectorAll('.sprocket').forEach(function(s,i){s.style.background=(Math.floor((i*18+sprOff)/18)%2===0)?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.16)';});}
+function frame(ts){if(!lastTs)lastTs=ts;var dt=Math.min((ts-lastTs)/1000,0.1);lastTs=ts;if(playing){t+=dt*SPEEDS[si];if(t>=TOTAL)t=0;}var info=curScene();info.s.fn(info.p);flashCut(info.p);scanline();grain();updateLeft(info);updateHUD(info.idx);requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
